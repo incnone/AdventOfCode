@@ -43,6 +43,19 @@ class ListInput(object):
             self.cursor += 1
 
 
+class StringInput(object):
+    """Reads inputs to an IntcodeProgram from a string, converting to ascii values."""
+    def __init__(self):
+        self.input_str = None
+        self.cursor = 0
+
+    def get_input(self):
+        try:
+            return ord(self.input_str[self.cursor])
+        finally:
+            self.cursor += 1
+
+
 class ConsoleInput(object):
     """Provides input to an IntcodeProgram through stdin, using ascii conversion if desired"""
     def __init__(self, use_ascii=True):
@@ -66,13 +79,13 @@ class ConsoleOutput(object):
         self.use_ascii = use_ascii
 
     def read_output(self, value):
-        try:
-            print(chr(value) if self.use_ascii else value, end="")
-        except TypeError:
-            print(value, end="")
-
         if self.use_ascii and value > 255:  # Hack
             print('<Non-ascii: {}>'.format(value), end="")
+        else:
+            try:
+                print(chr(value) if self.use_ascii else value, end="")
+            except TypeError:
+                print(value, end="")
 
 
 class IOHandlerL2L(ListInput, ListOutput):
@@ -97,6 +110,12 @@ class IOHandlerL2C(ListInput, ConsoleOutput):
     def __init__(self, input_list=None, use_ascii=True):
         ListInput.__init__(self, input_list=input_list)
         ConsoleOutput.__init__(self, use_ascii=use_ascii)
+
+
+class IOHandlerS2C(StringInput, ConsoleOutput):
+    def __init__(self):
+        StringInput.__init__(self)
+        ConsoleOutput.__init__(self, use_ascii=True)
 
 
 class IntcodeProgram(object):
