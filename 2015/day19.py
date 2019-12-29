@@ -188,8 +188,13 @@ def part_1(recipe_book, medicine_mol_str):
 
 def part_2(recipe_book, medicine_mol_str):
     mol = Molecule.from_str(medicine_mol_str)
-    step, reduction = reduce(recipe_book, mol)
-    return step
+    steps = mol.length
+    for elem in mol.elements:
+        if elem == Element('Rn'):
+            steps -= 2
+        elif elem == Element('Y'):
+            steps -= 2
+    return steps - 1
 
 
 def test_input():
