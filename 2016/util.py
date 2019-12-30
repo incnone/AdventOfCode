@@ -18,3 +18,7 @@ def ncr(n, r):
     numer = reduce(op.mul, range(n, n-r, -1), 1)
     denom = reduce(op.mul, range(1, r+1), 1)
     return numer // denom
+
+
+def add_pair(p, q):
+    return p[0] + q[0], p[1] + q[1]
