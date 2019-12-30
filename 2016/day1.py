@@ -1,5 +1,4 @@
 from getinput import get_input
-from grid import Loc2, Direction
 
 
 def part_1(dirs):
