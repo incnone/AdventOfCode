@@ -9,6 +9,9 @@ class PriorityQueue(object):
         self.REMOVED = '<removed-task>'            # placeholder for a removed task
         self.counter = itertools.count()           # unique sequence count
 
+    def __str__(self):
+        return '<PQ:{}>'.format(self.pq)
+
     def __bool__(self):
         return bool(self.pq)
 

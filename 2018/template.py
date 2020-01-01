@@ -3,15 +3,15 @@ import itertools
 import textwrap
 
 
-def parse_input(s):
+def parse_input(s: str):
     return s
 
 
-def part_1(input_str):
+def part_1(input_str: str):
     return
 
 
-def part_2(input_str):
+def part_2(input_str: str):
     return
 
 

@@ -64,5 +64,9 @@ def add_dir(p1: Tuple[int, int], p2: Direction):
     return add_pair(p1, p2.pair)
 
 
+def neg(p: Tuple[int, int]):
+    return -p[0], -p[1]
+
+
 def dist_L1(p1: Tuple[int, int], p2: Tuple[int, int]):
     return abs(p1[0] - p2[0]) + abs(p1[1] - p2[1])
