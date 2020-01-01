@@ -61,6 +61,16 @@ def solve_crt(congs, mods):
     return solve_crt((x,) + congs[2:], (n,) + mods[2:])
 
 
+def is_prime(n):
+    # Not super speedy but ok
+    if n < 2:
+        return False
+    for x in range(2, int(n**0.5) + 1):
+        if n % x == 0:
+            return False
+    return True
+
+
 class TestGCD(unittest.TestCase):
     def test_eegcd(self):
         for a, b, d in [(24, 18, 6), (54, 36, 18), (120, 428860, 20), (95642, 1681, 1)]:

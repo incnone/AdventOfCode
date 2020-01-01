@@ -16,26 +16,44 @@ class Direction(Enum):
     EAST = 4
 
     @property
+    def right(self):
+        right_dir = {
+            Direction.NORTH: Direction.EAST,
+            Direction.SOUTH: Direction.WEST,
+            Direction.WEST: Direction.NORTH,
+            Direction.EAST: Direction.SOUTH
+        }
+        return right_dir[self]
+
+    @property
+    def left(self):
+        left_dir = {
+            Direction.NORTH: Direction.WEST,
+            Direction.SOUTH: Direction.EAST,
+            Direction.WEST: Direction.SOUTH,
+            Direction.EAST: Direction.NORTH
+        }
+        return left_dir[self]
+
+    @property
     def pair(self):
-        if self == Direction.NORTH:
-            return 0, -1
-        elif self == Direction.SOUTH:
-            return 0, 1
-        elif self == Direction.WEST:
-            return -1, 0
-        elif self == Direction.EAST:
-            return 1, 0
+        pair_dir = {
+            Direction.NORTH: (0, -1),
+            Direction.SOUTH: (0, 1),
+            Direction.WEST: (-1, 0),
+            Direction.EAST: (1, 0)
+        }
+        return pair_dir[self]
 
     @property
     def opposite(self):
-        if self == Direction.NORTH:
-            return Direction.SOUTH
-        elif self == Direction.SOUTH:
-            return Direction.NORTH
-        elif self == Direction.WEST:
-            return Direction.EAST
-        elif self == Direction.EAST:
-            return Direction.WEST
+        opposite_dir = {
+            Direction.NORTH: Direction.SOUTH,
+            Direction.SOUTH: Direction.NORTH,
+            Direction.WEST: Direction.EAST,
+            Direction.EAST: Direction.WEST
+        }
+        return opposite_dir[self]
 
 
 def add_pair(p1: Tuple[int, int], p2: Tuple[int, int]):

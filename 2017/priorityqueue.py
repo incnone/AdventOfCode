@@ -44,3 +44,24 @@ class PriorityQueue(object):
                 del self.entry_finder[task]
                 return priority, task
         raise KeyError('pop from an empty priority queue')
+
+
+# def djikstra_path(start_node, end_node, neighbor_fn):
+#     """
+#     Implements Djikstra's algorithm.
+#
+#     start: Node
+#         Node should be a hashable type
+#     neighbor_fn : Node --> List[(Node, int)]
+#         This function should accept a node and give a list of its neighbors, together with the distances to those
+#         neighbors.
+#     """
+#     # Djikstra's algorithm.
+#     pq = PriorityQueue()
+#     pq.add_task(start_node, priority=0)
+#     while pq:
+#         distance, next_node = pq.pop_task_with_priority()
+#         if next_building.is_assembled():
+#             return distance
+#         for neighbor in next_building.get_legal_successors():
+#             pq.add_task_if_better(neighbor, priority=distance+1)

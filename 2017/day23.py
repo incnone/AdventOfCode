@@ -1,20 +1,15 @@
+from getinput import get_input
+import itertools
 from collections import defaultdict
+from util import is_prime
 
 
 class Program(object):
     def __init__(self, code):
         self.code = code
         self.registers = defaultdict(lambda: 0)
-        self.sound = None
         self.cursor = 0
-        self.linked_program = None
-        self.received_values = []
-        self.waiting = 0
-        self.num_sent = 0
         self.mul_val = 0
-
-    def receive_value(self, x):
-        self.received_values.append(x)
 
     def val(self, x):
         try:
@@ -26,15 +21,8 @@ class Program(object):
         cmd = self.code[self.cursor]
         words = cmd.split()
         opcode, params = words[0], words[1:]
-        if opcode == 'snd':
-            self.linked_program.receive_value(self.val(params[0]))
-            self.cursor += 1
-            self.num_sent += 1
-        elif opcode == 'set':
+        if opcode == 'set':
             self.registers[params[0]] = self.val(params[1])
-            self.cursor += 1
-        elif opcode == 'add':
-            self.registers[params[0]] += self.val(params[1])
             self.cursor += 1
         elif opcode == 'sub':
             self.registers[params[0]] -= self.val(params[1])
@@ -42,21 +30,7 @@ class Program(object):
         elif opcode == 'mul':
             self.registers[params[0]] *= self.val(params[1])
             self.cursor += 1
-        elif opcode == 'mod':
-            self.registers[params[0]] %= self.val(params[1])
-            self.cursor += 1
-        elif opcode == 'rcv':
-            if self.received_values:
-                self.registers[params[0]] = self.received_values.pop(0)
-                self.waiting = 0
-                self.cursor += 1
-            else:
-                self.waiting += 1
-        elif opcode == 'jgz':
-            if self.val(params[0]) > 0:
-                self.cursor += self.val(params[1])
-            else:
-                self.cursor += 1
+            self.mul_val += 1
         elif opcode == 'jnz':
             if self.val(params[0]) != 0:
                 self.cursor += self.val(params[1])
@@ -66,3 +40,31 @@ class Program(object):
     def execute(self):
         while 0 <= self.cursor < len(self.code):
             self.execute_next()
+
+
+def parse_input(s):
+    return s.splitlines(keepends=False)
+
+
+def part_1(input_str):
+    prog = Program(parse_input(input_str))
+    prog.execute()
+    return prog.mul_val
+
+
+def part_2(input_str):
+    h = 0
+    for b in range(108100, 108100+17000+17, 17):
+        if not is_prime(b):
+            h += 1
+    return h
+
+
+def main():
+    input_str = get_input(23)
+    print('Part 1:', part_1(input_str))
+    print('Part 2:', part_2(input_str))
+
+
+if __name__ == "__main__":
+    main()
