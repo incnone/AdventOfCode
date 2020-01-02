@@ -3,6 +3,14 @@ import unittest
 from enum import Enum
 
 
+class Loc2Grid(object):
+    def __init__(self, arr):
+        self.arr = arr
+
+    def at(self, loc):
+        return self.arr[loc.y][loc.x]
+
+
 class Loc2(tuple):
     @staticmethod
     def turn_right(l):
@@ -80,6 +88,26 @@ class Direction(Enum):
     @property
     def y(self):
         return self.pair[1]
+
+    @property
+    def left(self):
+        left = {
+            Direction.NORTH: Direction.WEST,
+            Direction.WEST: Direction.SOUTH,
+            Direction.SOUTH: Direction.EAST,
+            Direction.EAST: Direction.NORTH
+        }
+        return left[self]
+
+    @property
+    def right(self):
+        right = {
+            Direction.NORTH: Direction.EAST,
+            Direction.EAST: Direction.SOUTH,
+            Direction.SOUTH: Direction.WEST,
+            Direction.WEST: Direction.NORTH
+        }
+        return right[self]
 
 
 class TestLoc(unittest.TestCase):
