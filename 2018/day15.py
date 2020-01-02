@@ -3,6 +3,7 @@ import itertools
 import textwrap
 from grid import Loc2, Loc2Grid, Direction
 import unittest
+from copy import copy
 
 
 class Combatant(object):
@@ -10,14 +11,14 @@ class Combatant(object):
     goblin_index = 0
 
     @staticmethod
-    def elf(loc, battle):
+    def elf(loc, battle, damage=3, hp=200):
         Combatant.elf_index += 1
-        return Combatant('Elf-{}'.format(Combatant.elf_index), 3, 200, loc, battle)
+        return Combatant('Elf-{}'.format(Combatant.elf_index), damage, hp, loc, battle)
 
     @staticmethod
-    def goblin(loc, battle):
+    def goblin(loc, battle, damage=3, hp=200):
         Combatant.elf_index += 1
-        return Combatant('Gob-{}'.format(Combatant.goblin_index), 3, 200, loc, battle)
+        return Combatant('Gob-{}'.format(Combatant.goblin_index), damage, hp, loc, battle)
 
     def __init__(self, name, damage, hp, loc, battle):
         self.name = name
@@ -28,6 +29,12 @@ class Combatant(object):
 
     def __str__(self):
         return '{}({})'.format(self.letter, self.hp)
+
+    def __copy__(self):
+        raise NotImplementedError()
+
+    def get_copy(self, battle):
+        return Combatant(self.name, self.damage, self.hp, self.loc, battle)
 
     @property
     def sortkey(self):
@@ -41,7 +48,7 @@ class Combatant(object):
         target_letters = {'E': 'G', 'G': 'E'}
         target_ltr = target_letters[self.letter]
         for c in self.battle.combatants:
-            if c.loc == loc and c.letter == target_ltr:
+            if c.loc == loc and c.letter == target_ltr and c.alive:
                 return c
         return None
 
@@ -92,9 +99,15 @@ class Combatant(object):
             target.hp -= self.damage
             # print('Unit at {} attacks unit at {}'.format(self.loc, target.loc))
 
+    @property
+    def alive(self):
+        return self.hp > 0
+
 
 class Battle(object):
-    def __init__(self, s):
+    def __init__(self, s, elf_damage=3):
+        # Might be more efficient to keep a map of locations to combatants (to more easily answer the
+        # common question "What's on this tile?")
         self.ticks = 0
         self.arena = Loc2Grid(
             list(list(True if c == '#' else False for c in line) for line in s.splitlines(keepends=False))
@@ -103,9 +116,18 @@ class Battle(object):
         for y, line in enumerate(s.splitlines(keepends=False)):
             for x, c in enumerate(line):
                 if c == 'E':
-                    self.combatants.append(Combatant.elf(Loc2(x, y), self))
+                    self.combatants.append(Combatant.elf(Loc2(x, y), self, damage=elf_damage))
                 elif c == 'G':
                     self.combatants.append(Combatant.goblin(Loc2(x, y), self))
+
+    def __copy__(self):
+        raise NotImplementedError()
+        # battle = Battle('')
+        # battle.arena = self.arena
+        # battle.ticks = self.ticks
+        # for c in self.combatants:
+        #     battle.combatants.append(c.get_copy(battle))
+        # return battle
 
     def _get_char(self, loc):
         for combatant in self.combatants:
@@ -119,7 +141,7 @@ class Battle(object):
         )
 
     def passable(self, loc):
-        return not self.arena.at(loc) and not any(c.loc == loc for c in self.combatants)
+        return not self.arena.at(loc) and not any((c.loc == loc and c.alive) for c in self.combatants)
 
     def tick(self):
         self.combatants = sorted(self.combatants, key=lambda c: c.sortkey)
@@ -130,22 +152,46 @@ class Battle(object):
             combatant.attack()
         else:
             self.ticks += 1
-        self.combatants[:] = [c for c in self.combatants if c.hp > 0]
+        self.combatants[:] = [c for c in self.combatants if c.alive]
 
     @property
     def active(self):
-        return any(c.letter == 'E' and c.hp > 0 for c in self.combatants) \
-               and any(c.letter == 'G' and c.hp > 0 for c in self.combatants)
+        return any(c.letter == 'E' and c.alive for c in self.combatants) \
+               and any(c.letter == 'G' and c.alive for c in self.combatants)
 
     @property
     def outcome(self):
         return self.ticks*sum(c.hp for c in self.combatants)
+
+    @property
+    def winner(self):
+        elves = any(c.letter == 'E' and c.alive for c in self.combatants)
+        gobs = any(c.letter == 'G' and c.alive for c in self.combatants)
+        if elves and not gobs:
+            return 'E'
+        elif gobs and not elves:
+            return 'G'
+        else:
+            return None
 
 
 def get_outcome(battle):
     while battle.active:
         battle.tick()
     return battle.outcome
+
+
+def get_narrowest_elf_win_outcome(battle_str):
+    elf_damage = 2
+    while True:
+        elf_damage += 1
+        battle = Battle(battle_str, elf_damage=elf_damage)
+        num_elves = sum(1 for c in battle.combatants if c.letter == 'E')
+        outcome = get_outcome(battle)
+        if num_elves == sum(1 for c in battle.combatants if c.letter == 'E'):
+            break
+
+    return outcome
 
 
 def step_through(battle):
@@ -160,112 +206,106 @@ def step_through(battle):
 
 
 def part_1(input_str: str):
-    input_str = textwrap.dedent("""\
-    #########
-    #.......#
-    #.......#
-    #E..G...#
-    #..GE...#
-    #.#.#...#
-    #.#.#####
-    #.#...E.#
-    #########""")
-
-    step_through(Battle(input_str))
     return get_outcome(Battle(input_str))
 
 
 def part_2(input_str: str):
-    return
+    return get_narrowest_elf_win_outcome(input_str)
 
 
 class TestBattle(unittest.TestCase):
     def test_1(self):
-        battle = Battle(textwrap.dedent("""\
+        battle_str = textwrap.dedent("""\
         #######
         #EG...#
         #####.#
         #..E..#
         #.#####
         #...G.#
-        #######"""))
-        outcome = get_outcome(battle)
-        healths = [c.hp for c in battle.combatants]
+        #######""")
+        battle_1 = Battle(battle_str)
+        outcome = get_outcome(battle_1)
         self.assertEqual(1751, outcome)
-        self.assertEqual(healths, [17])
 
     def test_2(self):
-        battle = Battle(textwrap.dedent("""\
+        battle_str = textwrap.dedent("""\
         #######
         #.G...#
         #...EG#
         #.#.#G#
         #..G#E#
         #.....#
-        #######"""))
+        #######""")
+        battle = Battle(battle_str)
         outcome = get_outcome(battle)
-        healths = [c.hp for c in battle.combatants]
         self.assertEqual(27730, outcome)
-        self.assertEqual(healths, [200, 131, 59, 200])
+        self.assertEqual(4988, get_narrowest_elf_win_outcome(battle_str))
 
     def test_3(self):
-        battle = Battle(textwrap.dedent("""\
+        battle_str = textwrap.dedent("""\
         #######
         #G..#E#
         #E#E.E#
         #G.##.#
         #...#E#
         #...E.#
-        #######"""))
+        #######""")
+        battle = Battle(battle_str)
         outcome = get_outcome(battle)
         healths = [c.hp for c in battle.combatants]
         self.assertEqual(36334, outcome)
         self.assertEqual(healths, [200, 197, 185, 200, 200])
 
     def test_4(self):
-        battle = Battle(textwrap.dedent("""\
+        battle_str = textwrap.dedent("""\
         #######
         #E..EG#
         #.#G.E#
         #E.##E#
         #G..#.#
         #..E#.#
-        #######"""))
+        #######""")
+        battle = Battle(battle_str)
         outcome = get_outcome(battle)
         healths = [c.hp for c in battle.combatants]
         self.assertEqual(39514, outcome)
         self.assertEqual(healths, [164, 197, 200, 98, 200])
+        self.assertEqual(31284, get_narrowest_elf_win_outcome(battle_str))
 
     def test_5(self):
-        battle = Battle(textwrap.dedent("""\
+        battle_str = textwrap.dedent("""\
         #######
         #E.G#.#
         #.#G..#
         #G.#.G#
         #G..#.#
         #...E.#
-        #######"""))
+        #######""")
+        battle = Battle(battle_str)
         outcome = get_outcome(battle)
         healths = [c.hp for c in battle.combatants]
         self.assertEqual(27755, outcome)
         self.assertEqual(healths, [200, 98, 200, 95, 200])
+        self.assertEqual(3478, get_narrowest_elf_win_outcome(battle_str))
 
     def test_6(self):
-        battle = Battle(textwrap.dedent("""\
+        battle_str = textwrap.dedent("""\
         #######
         #.E...#
         #.#..G#
         #.###.#
         #E#G#G#
         #...#G#
-        #######"""))
+        #######""")
+        battle = Battle(battle_str)
         outcome = get_outcome(battle)
         healths = [c.hp for c in battle.combatants]
         self.assertEqual(28944, outcome)
         self.assertEqual(healths, [200, 98, 38, 200])
+        self.assertEqual(6474, get_narrowest_elf_win_outcome(battle_str))
 
     def test_7(self):
-        battle = Battle(textwrap.dedent("""\
+        battle_str = textwrap.dedent("""\
         #########
         #G......#
         #.E.#...#
@@ -274,14 +314,16 @@ class TestBattle(unittest.TestCase):
         #...#...#
         #.G...G.#
         #.....G.#
-        #########"""))
+        #########""")
+        battle = Battle(battle_str)
         outcome = get_outcome(battle)
         healths = [c.hp for c in battle.combatants]
         self.assertEqual(18740, outcome)
         self.assertEqual(healths, [137, 200, 200, 200, 200])
+        self.assertEqual(1140, get_narrowest_elf_win_outcome(battle_str))
 
     def test_8(self):
-        battle = Battle(textwrap.dedent("""\
+        battle_str = textwrap.dedent("""\
         #########
         #.......#
         #.......#
@@ -290,9 +332,9 @@ class TestBattle(unittest.TestCase):
         #.#.#...#
         #.#.#####
         #.#...E.#
-        #########"""))
+        #########""")
+        battle = Battle(battle_str)
         outcome = get_outcome(battle)
-        healths = [c.hp for c in battle.combatants]
         self.assertEqual(18020, outcome)
 
 
@@ -303,5 +345,5 @@ def main():
 
 
 if __name__ == "__main__":
-    unittest.main()
+    # unittest.main()
     main()
