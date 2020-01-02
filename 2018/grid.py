@@ -109,6 +109,16 @@ class Direction(Enum):
         }
         return right[self]
 
+    @property
+    def opposite(self):
+        opp = {
+            Direction.NORTH: Direction.SOUTH,
+            Direction.SOUTH: Direction.NORTH,
+            Direction.EAST: Direction.WEST,
+            Direction.WEST: Direction.EAST
+        }
+        return opp[self]
+
 
 class TestLoc(unittest.TestCase):
     def test_create(self):

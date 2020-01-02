@@ -34,7 +34,7 @@ class Program(object):
         self.reg[c] = self.reg[a] * self.reg[b]
 
     def muli(self, a, b, c):
-        self.reg[c] = self.reg[a] + b
+        self.reg[c] = self.reg[a] * b
 
     def banr(self, a, b, c):
         self.reg[c] = self.reg[a] & self.reg[b]

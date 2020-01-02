@@ -18,6 +18,10 @@ def parse_input_1(s: str):
     return effects
 
 
+def parse_input_2(s: str):
+    return list(list(int(x) for x in line.split()) for line in s.splitlines(keepends=False)[3124:] if line)
+
+
 def assign_opcodes(input_str: str):
     effects = parse_input_1(input_str)
     opcodes = dict()
@@ -37,15 +41,10 @@ def assign_opcodes(input_str: str):
 
     final_opcodes = dict()
     while len(final_opcodes) < 16:
-        print('------------------------------')
-        print(final_opcodes)
-
         for k, v in opcodes.items():
-            print(k, v)
             v = opcodes[k] = [x for x in v if x not in final_opcodes.values()]
             if k not in final_opcodes.keys() and not v:
                 print(final_opcodes)
-
                 raise RuntimeError('Can\'t assign opcodes.')
             if len(opcodes[k]) == 1:
                 final_opcodes[k] = v[0]
@@ -71,7 +70,11 @@ def part_1(input_str: str):
 
 def part_2(input_str: str):
     opcodes = assign_opcodes(input_str)
-    print(opcodes)
+    instrs = parse_input_2(input_str)
+    prog = Program()
+    for opcode, a, b, c in instrs:
+        opcodes[opcode](prog, a, b, c)
+    return prog.reg[0]
 
 
 def test_input():
