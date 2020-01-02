@@ -10,8 +10,29 @@ class Loc2Grid(object):
     def at(self, loc):
         return self.arr[loc.y][loc.x]
 
+    def __contains__(self, loc):
+        return 0 <= loc.y < len(self.arr) and 0 <= loc.x < len(self.arr[loc.y])
+
+    def __getitem__(self, loc):
+        return self.arr[loc.y][loc.x]
+
+    def __setitem__(self, loc, value):
+        self.arr[loc.y][loc.x] = value
+
 
 class Loc2(tuple):
+    @staticmethod
+    def adj_offset_sup():
+        return [
+            Loc2(-1, -1), Loc2(0, -1), Loc2(1, -1),
+            Loc2(-1, 0),               Loc2(1, 0),
+            Loc2(-1, 1), Loc2(0, 1), Loc2(1, 1)
+        ]
+
+    @staticmethod
+    def adj_sup(loc):
+        return [loc + off for off in Loc2.adj_offset_sup()]
+
     @staticmethod
     def turn_right(l):
         return Loc2(l.y, -l.x)
