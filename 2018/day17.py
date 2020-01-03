@@ -15,6 +15,11 @@ class Reservoir(object):
         self.x_bounds = (min(loc.x for loc in self.clay), max(loc.x for loc in self.clay))
         self.y_bounds = (min(min(loc.y for loc in self.clay), 0), max(loc.y for loc in self.clay))
 
+    @property
+    def num_water(self):
+        ymin, ymax = self.y_bounds
+        return sum(1 for p in self.wet if ymin <= p.y <= ymax) + sum(1 for p in self.water if ymin <= p.y <= ymax)
+
     def clay_or_water_at(self, loc):
         return loc in self.clay or loc in self.water
 
@@ -158,7 +163,13 @@ def part_1(input_str: str):
 
 
 def part_2(input_str: str):
-    return
+    num = 0
+    with open('reservoir/end.txt', 'r') as file:
+        for line in file:
+            for c in line:
+                if c in ['~']:
+                    num += 1
+    return num
 
 
 def test_input():
