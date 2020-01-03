@@ -27,8 +27,9 @@ class PriorityQueue(object):
     def add_task_if_better(self, task, priority=0):
         """Add a new task or update the priority of an existing task"""
         if task in self.entry_finder and self.entry_finder[task][0] <= priority:
-            return
+            return False
         self.add_task(task, priority=priority)
+        return True
 
     def remove_task(self, task):
         """Mark an existing task as REMOVED.  Raise KeyError if not found."""

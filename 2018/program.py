@@ -60,7 +60,7 @@ class Program(object):
 
     def execute_next(self):
         opcode, a, b, c = self.instrs[self.instr_ptr]
-        opcode(s)
+        opcode(self, a, b, c)
         self.reg[self.instr_ptr_idx] += 1
 
     def init_from_str(self, s):
@@ -74,52 +74,52 @@ class Program(object):
             a, b, c = (int(x) for x in words[1:])
             self.instrs.append((opcode, a, b, c))
 
-    def addr(s):
+    def addr(self, a, b, c):
         self.reg[c] = self.reg[a] + self.reg[b]
 
-    def addi(s):
+    def addi(self, a, b, c):
         self.reg[c] = self.reg[a] + b
 
-    def mulr(s):
+    def mulr(self, a, b, c):
         self.reg[c] = self.reg[a] * self.reg[b]
 
-    def muli(s):
+    def muli(self, a, b, c):
         self.reg[c] = self.reg[a] * b
 
-    def banr(s):
+    def banr(self, a, b, c):
         self.reg[c] = self.reg[a] & self.reg[b]
 
-    def bani(s):
+    def bani(self, a, b, c):
         self.reg[c] = self.reg[a] & b
 
-    def borr(s):
+    def borr(self, a, b, c):
         self.reg[c] = self.reg[a] | self.reg[b]
 
-    def bori(s):
+    def bori(self, a, b, c):
         self.reg[c] = self.reg[a] | b
 
-    def setr(s):
+    def setr(self, a, b, c):
         self.reg[c] = self.reg[a]
 
-    def seti(s):
+    def seti(self, a, b, c):
         self.reg[c] = a
 
-    def gtir(s):
+    def gtir(self, a, b, c):
         self.reg[c] = 1 if a > self.reg[b] else 0
 
-    def gtri(s):
+    def gtri(self, a, b, c):
         self.reg[c] = 1 if self.reg[a] > b else 0
 
-    def gtrr(s):
+    def gtrr(self, a, b, c):
         self.reg[c] = 1 if self.reg[a] > self.reg[b] else 0
 
-    def eqir(s):
+    def eqir(self, a, b, c):
         self.reg[c] = 1 if a == self.reg[b] else 0
 
-    def eqri(s):
+    def eqri(self, a, b, c):
         self.reg[c] = 1 if self.reg[a] == b else 0
 
-    def eqrr(s):
+    def eqrr(self, a, b, c):
         self.reg[c] = 1 if self.reg[a] == self.reg[b] else 0
 
 
@@ -224,16 +224,28 @@ class Decompile(object):
                 return '{} = {}*{}'.format(self.reg(c), self.reg(a), b)
 
     def banr(self, a, b, c):
-        return 'banr NOT IMPLEMENTED IN DECOMPILER'
+        if c == self.ipr:
+            return 'goto {}&{}+1'.format(self.reg(a), self.reg(b))
+        else:
+            return '{} = {}&{}'.format(self.reg(c), self.reg(a), self.reg(b))
 
     def bani(self, a, b, c):
-        return 'bani NOT IMPLEMENTED IN DECOMPILER'
+        if c == self.ipr:
+            return 'goto {}&{}+1'.format(self.reg(a), bin(b))
+        else:
+            return '{} = {}&{}'.format(self.reg(c), self.reg(a), bin(b))
     
     def borr(self, a, b, c):
-        return 'borr NOT IMPLEMENTED IN DECOMPILER'
+        if c == self.ipr:
+            return 'goto {}|{}+1'.format(self.reg(a), self.reg(b))
+        else:
+            return '{} = {}|{}'.format(self.reg(c), self.reg(a), self.reg(b))
 
     def bori(self, a, b, c):
-        return 'bori NOT IMPLEMENTED IN DECOMPILER'
+        if c == self.ipr:
+            return 'goto {}|{}+1'.format(self.reg(a), bin(b))
+        else:
+            return '{} = {}|{}'.format(self.reg(c), self.reg(a), bin(b))
     
     def setr(self, a, b, c):
         if c == a:
@@ -250,10 +262,16 @@ class Decompile(object):
             return '{} = {}'.format(self.reg(c), a)
     
     def gtir(self, a, b, c):
-        return 'gtir NOT IMPLEMENTED IN DECOMPILER'
+        if c == self.ipr:
+            return 'gtir(ip) NOT IMPLEMENTED IN DECOMPILER'
+        else:
+            return '{} = ({} < {})'.format(self.reg(c), self.reg(b), a)
     
     def gtri(self, a, b, c):
-        return 'gtri NOT IMPLEMENTED IN DECOMPILER'
+        if c == self.ipr:
+            return 'gtri(ip) NOT IMPLEMENTED IN DECOMPILER'
+        else:
+            return '{} = ({} < {})'.format(self.reg(c), b, self.reg(a))
     
     def gtrr(self, a, b, c):
         if c == self.ipr:
@@ -262,10 +280,16 @@ class Decompile(object):
             return '{} = ({} < {})'.format(self.reg(c), self.reg(b), self.reg(a))
     
     def eqir(self, a, b, c):
-        return 'eqir NOT IMPLEMENTED IN DECOMPILER'
+        if c == self.ipr:
+            return 'eqir(ip) NOT IMPLEMENTED IN DECOMPILER'
+        else:
+            return '{} = ({} == {})'.format(self.reg(c), self.reg(b), a)
     
     def eqri(self, a, b, c):
-        return 'eqri NOT IMPLEMENTED IN DECOMPILER'
+        if c == self.ipr:
+            return 'eqri(ip) NOT IMPLEMENTED IN DECOMPILER'
+        else:
+            return '{} = ({} == {})'.format(self.reg(c), b, self.reg(a))
     
     def eqrr(self, a, b, c):
         if c == self.ipr:

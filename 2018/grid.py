@@ -28,10 +28,21 @@ class Loc2(tuple):
             Loc2(-1, 0),               Loc2(1, 0),
             Loc2(-1, 1), Loc2(0, 1), Loc2(1, 1)
         ]
+    @staticmethod
+    def adj_offset_L1():
+        return [
+                        Loc2(0, -1),
+            Loc2(-1, 0),               Loc2(1, 0),
+                        Loc2(0, 1)
+        ]
 
     @staticmethod
     def adj_sup(loc):
         return [loc + off for off in Loc2.adj_offset_sup()]
+
+    @staticmethod
+    def adj_L1(loc):
+        return [loc + off for off in Loc2.adj_offset_L1()]
 
     @staticmethod
     def turn_right(l):
