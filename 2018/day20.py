@@ -4,6 +4,7 @@ import textwrap
 from grid import Loc2, Direction
 from typing import Dict, Optional
 from collections import defaultdict
+import unittest
 
 
 class ElfRoom(object):
@@ -122,16 +123,43 @@ class ElfComplex(object):
                 break
         return paths, idx
 
-    def _explore_path_hlpr(self, s: str, start_loc: Loc2, cache, global_idx):
+    def _explore_path_hlpr(self, s: str, start_loc: Loc2, cache, global_idx, check_len):
+        """
+        Helper function for the recursion in explore_path.
+        :param s: The string denoting the path we're to explore
+        :param start_loc: The place we start exploring
+        :param cache: A Set[Loc2, int] of locations we've been to and the "time" (string index) we were there
+        :param global_idx: An index tracking where we are in the "larger" string (the one this is recursing a part of)
+        :param check_len: We don't check for pruning until we get here (see Ex 4 for a case where not doing this fails)
+        :return:
+        """
         current_loc = start_loc
         for idx, c in enumerate(s):
+            # If we've already visited this location at this string index, prune this
+            if idx >= check_len:
+                if (global_idx+idx, current_loc) in cache:
+                    return
+                else:
+                    cache.add((global_idx+idx, current_loc))
+
+            # Ignore string start/end characters
             if c == '^' or c == '$':
                 pass
+
+            # Opens a group; parse the group into two paths and explore both
             elif c == '(':
                 paths, end_idx = self._get_path_split(s[idx:])
                 for path in paths:
-                    self._explore_path_hlpr(path + s[idx+end_idx:], current_loc, cache, global_idx+idx)
+                    self._explore_path_hlpr(
+                        path + s[idx+end_idx:],
+                        current_loc,
+                        cache,
+                        global_idx+idx+end_idx-len(path),
+                        len(path)
+                    )
                 return
+
+            # Explore in the current direction
             else:
                 d = self._ltr_to_dir(c)
                 self.rooms[current_loc][d] = True
@@ -139,27 +167,27 @@ class ElfComplex(object):
                 self.rooms[current_loc][d.opposite] = True
 
     def explore_path(self, s: str):
-        return self._explore_path_hlpr(s, Loc2(0, 0), dict(), 0)
+        return self._explore_path_hlpr(s, Loc2(0, 0), set(), 0, 0)
 
     def fill_with_doors(self):
         for v in self.rooms.values():
             v.fill_with_doors()
 
-    def furthest_room_dist(self):
-        explored = {Loc2(0, 0)}
+    def room_dists(self):
         to_explore = [(Loc2(0, 0), 0)]
-        max_dist = 0
+        dists = {Loc2(0, 0): 0}
         while to_explore:
-            loc, dist = to_explore.pop()
-            max_dist = max(max_dist, dist)
+            loc, dist = to_explore.pop(0)
             room = self.rooms[loc]
-            for d in Direction:
-                if room[d]:
-                    next_loc = loc + d
-                    if next_loc not in explored:
-                        to_explore.append((next_loc, dist+1))
-                        explored.add(next_loc)
-        return max_dist
+            for d in [x for x in Direction if room[x]]:
+                next_loc = loc + d
+                if next_loc not in dists.keys():
+                    to_explore.append((next_loc, dist+1))
+                    dists[next_loc] = dist+1
+        return dists
+
+    def furthest_room_dist(self):
+        return max(self.room_dists().values())
 
 
 def parse_input(s: str):
@@ -167,16 +195,21 @@ def parse_input(s: str):
 
 
 def part_1(input_str: str):
-    input_str = test_input(2)
+    # input_str = test_input(2)
     complex = ElfComplex()
     complex.explore_path(input_str)
     complex.fill_with_doors()
-    print(complex)
     return complex.furthest_room_dist()
 
 
 def part_2(input_str: str):
-    return
+    # input_str = test_input(4)
+    complex = ElfComplex()
+    complex.explore_path(input_str)
+    complex.fill_with_doors()
+    dists = complex.room_dists()
+    # print(complex)
+    return sum(1 for dist in dists.values() if dist >= 1000)
 
 
 def test_input(test_num):
@@ -200,5 +233,18 @@ def main():
     print('Part 2:', part_2(input_str))
 
 
+class TestElfComplex(unittest.TestCase):
+    def test_part_1(self):
+        answers = [0, 10, 18, 23, 31]
+
+        for x in range(1, 5):
+            input_str = test_input(x)
+            complex = ElfComplex()
+            complex.explore_path(input_str)
+            complex.fill_with_doors()
+            self.assertEqual(answers[x], complex.furthest_room_dist())
+
+
 if __name__ == "__main__":
+    # unittest.main()
     main()
