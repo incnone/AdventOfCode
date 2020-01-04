@@ -5,47 +5,53 @@ import re
 from grid import Loc2
 
 
-"""Oh dang these are octahedrons oops"""
+class Octahedron(object):
+    idx = 0
 
-
-class Diamond(object):
     @staticmethod
-    def intersection(dmd_1, dmd_2):
-        t = Diamond(0, 0, 0, 0)
+    def intersection(oct_1, oct_2):
+        o = Octahedron()
+        for idx in range(4):
+            vmin = max(oct_1.vals[idx][0], oct_2.vals[idx][0])
+            vmax = min(oct_1.vals[idx][1], oct_2.vals[idx][1])
+            if vmax < vmin:
+                return None
+            o.vals.append((vmin, vmax))
+        return o
 
-        if dmd_1.top_x <= dmd_2.top_x:
-            left, right = dmd_1, dmd_2
-        else:
-            left, right = dmd_2, dmd_1
-        t_lsum = left.top_x + left.top_y
-        t_rdiff = right.top_x - right.top_y
-        t.top_x = (1/2)*(t_lsum + t_rdiff)
-        t.top_y = (1/2)*(t_lsum - t_rdiff)
+    @staticmethod
+    def from_center_and_r(center, radius):
+        o = Octahedron()
+        center_offsets = [
+            center[0] + center[1] + center[2],
+            center[0] + center[1] - center[2],
+            center[0] - center[1] + center[2],
+            center[0] - center[1] - center[2]
+        ]
+        o.vals = [(-radius + c, radius + c) for c in center_offsets]
+        return o
 
-        b_ldiff = left.bot_x - left.bot_y
-        b_rsum = right.bot_x + right.bot_y
-        t.bot_x = (1/2)*(b_rsum + b_ldiff)
-        t.bot_y = (1/2)*(b_rsum - b_ldiff)
-        return t if t.valid else None
-
-    def __init__(self, top_x, top_y, bot_x, bot_y):
-        self.top_x = top_x
-        self.top_y = top_y
-        self.bot_x = bot_x
-        self.bot_y = bot_y
+    def __init__(self):
+        """
+        A grid-aligned octahedron is the intersection of 8 half-spaces:
+             a1 <= x + y + z <= a2
+             b1 <= x + y - z <= b2
+             c1 <= x - y + z <= c2
+             d1 <= x - y - z <= d2
+        We represent this by the list [(a1, a2), (b1, b2), (c1, c2), (d1, d2)].
+        """
+        self.vals = []
+        self.idx = Octahedron.idx
+        Octahedron.idx += 1
 
     def __hash__(self):
-        return hash((self.top_x, self.top_y, self.bot_x, self.bot_y))
+        return hash(tuple(self.vals))
 
     def __str__(self):
-        return 'Dmd:({},{})->({},{})'.format(self.top_x, self.top_y, self.bot_x, self.bot_y)
+        return 'O{}'.format(str(self.vals))
 
     def __repr__(self):
-        return str(self)
-
-    @property
-    def valid(self):
-        return self.bot_y > self.top_y and (self.bot_y - self.top_y) > abs(self.bot_x - self.top_x)
+        return 'T{}'.format(self.idx)
 
 
 def parse_input(s: str):
@@ -69,28 +75,35 @@ def part_1(input_str: str):
 
 
 def part_2(input_str: str):
-    input_str = test_input(2)
+    # input_str = test_input(2)
     nanobots = parse_input(input_str)
-    diamonds = []
+    initial_octs = []
     for loc, r in nanobots:
-        diamonds.append(Diamond(top_x=loc[0], top_y=loc[1]-r, bot_x=loc[0], bot_y=loc[1]+r))
+        initial_octs.append(Octahedron.from_center_and_r(loc, r))
 
     intersection_count = 1
-    intersections = [(d, {d}) for d in diamonds]
+    intersections = dict()
+    for o in initial_octs:
+        intersections[frozenset({o})] = o
+
     while True:
-        new_intersections = []
-        for dmd, incl_diamonds in intersections:
-            for d in diamonds:
-                if d not in incl_diamonds:
-                    new_inter = Diamond.intersection(d, dmd)
-                    if new_inter is not None:
-                        new_intersections.append((new_inter, incl_diamonds.union({d})))
+        new_intersections = dict()
+        for oct_set, intersection in intersections.items():
+            for oct in initial_octs:
+                if oct not in oct_set:
+                    new_intersection = Octahedron.intersection(intersection, oct)
+                    if new_intersection is not None:
+                        new_intersections[frozenset(oct_set.union({oct}))] = new_intersection
         if not new_intersections:
             break
         intersections = new_intersections
         intersection_count += 1
+        print(intersection_count)
+
     print(intersection_count)
     print(intersections)
+    for t in intersections.values():
+        print(t)
 
 
 def test_input(test_num):
@@ -117,7 +130,7 @@ def test_input(test_num):
 
 def main():
     input_str = get_input(23)
-    print('Part 1:', part_1(input_str))
+    # print('Part 1:', part_1(input_str))
     print('Part 2:', part_2(input_str))
 
 
