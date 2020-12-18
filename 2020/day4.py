@@ -14,33 +14,72 @@ class Passport(object):
     ]
 
     def __init__(self, s: str):
-        fields = s.strip('\n').split()
         self.data = dict()
-        for field in fields:
-            info = field.split(':')
-            self.data[info[0]] = info[1]
+        for field in s.split():
+            k, v = field.split(':')
+            self.data[k] = v
 
     def __str__(self):
         return ' '.join(['{}:{}'.format(k, v) for k,v in self.data.items()])
 
-    def is_vaild_1(self):
+    @property
+    def has_all_required_fields(self):
         for field in Passport.all_fields:
             if field != 'cid' and field not in self.data:
                 return False
         return True
 
-    def is_vaild_2(self):
+    @property
+    def is_vaild(self) -> bool:
+        return self._valid_byr and self._valid_iyr and self._valid_eyr and self._valid_hgt and self._valid_hcl \
+               and self._valid_ecl and self._valid_pid
+
+    @property
+    def valid_data_str(self) -> str:
+        return textwrap.dedent("""\
+        Byr: {byr}; Iyr: {iyr}; Eyr: {eyr}; Hgt: {hgt}; Hcl: {hcl}; Ecl: {ecl}; Pid: {pid}""".format(
+            byr=str(self._valid_byr),
+            eyr=str(self._valid_eyr),
+            iyr=str(self._valid_iyr),
+            hgt=str(self._valid_hgt),
+            hcl=str(self._valid_hcl),
+            ecl=str(self._valid_ecl),
+            pid=str(self._valid_pid),
+        ))
+
+    @property
+    def _valid_byr(self):
         try:
             byr = int(self.data['byr'])
             if byr < 1920 or byr > 2002:
                 return False
+            return True
+        except (ValueError, KeyError):
+            return False
+
+    @property
+    def _valid_iyr(self):
+        try:
             iyr = int(self.data['iyr'])
             if iyr < 2010 or iyr > 2020:
                 return False
+            return True
+        except (ValueError, KeyError):
+            return False
+
+    @property
+    def _valid_eyr(self):
+        try:
             eyr = int(self.data['eyr'])
             if eyr < 2020 or eyr > 2030:
                 return False
+            return True
+        except (ValueError, KeyError):
+            return False
 
+    @property
+    def _valid_hgt(self):
+        try:
             hgt = int(self.data['hgt'][:-2])
             hgt_unit = self.data['hgt'][-2:]
             if hgt_unit != 'cm' and hgt_unit != 'in':
@@ -49,26 +88,40 @@ class Passport(object):
                 return False
             if hgt_unit == 'in' and (hgt < 59 or hgt > 76):
                 return False
+            return True
+        except (ValueError, KeyError):
+            return False
 
+    @property
+    def _valid_hcl(self):
+        try:
             hcl = self.data['hcl']
             if len(hcl) != 7 or not hcl[0] == '#':
                 return False
             int(hcl[1:], 16)
+            return True
+        except (ValueError, KeyError):
+            return False
 
+    @property
+    def _valid_ecl(self):
+        try:
             ecl = self.data['ecl']
             if ecl not in {'amb', 'blu', 'brn', 'gry', 'grn', 'hzl', 'oth'}:
                 return False
-
-            pid = self.data['pid']
-            if len(pid) != 9 or not pid.isdigit():
-                return False
-
-        except ValueError:
-            return False
+            return True
         except KeyError:
             return False
 
-        return True
+    @property
+    def _valid_pid(self):
+        try:
+            pid = self.data['pid']
+            if len(pid) != 9 or not pid.isdigit():
+                return False
+            return True
+        except KeyError:
+            return False
 
 
 def get_test_input() -> str:
@@ -108,7 +161,7 @@ def parse_input(s: str):
 def part_1(data):
     count = 0
     for passport in data:
-        if passport.is_vaild_1():
+        if passport.has_all_required_fields:
             count += 1
     print("Part 1:", count)
 
@@ -116,7 +169,7 @@ def part_1(data):
 def part_2(data):
     count = 0
     for passport in data:
-        if passport.is_vaild_2():
+        if passport.is_vaild:
             count += 1
     print("Part 2:", count)
 
@@ -155,17 +208,20 @@ def p2_test():
     invalid_pass = parse_input(invalids)
 
     for passport in vaild_pass:
-        if not passport.is_vaild_2():
+        if not passport.is_vaild:
             print("Valid passport incorrectly marked invalid:\n", passport)
+            print(passport.valid_data_str)
 
     for passport in invalid_pass:
-        if passport.is_vaild_2():
+        if passport.is_vaild:
             print("Invalid passport incorrectly marked valid:\n", passport)
+            print(passport.valid_data_str)
 
 
 def main():
     data = read_input(day_number=4, test=False)
     part_1(data)
+    p2_test()
     part_2(data)
 
 
