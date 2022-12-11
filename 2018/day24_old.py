@@ -1,5 +1,5 @@
-import textwrap
 import itertools
+import textwrap
 import re
 from enum import Enum
 
@@ -39,8 +39,7 @@ class Battle(object):
         if not allowable_targets:
             return None
         else:
-            t = max(allowable_targets, key=lambda x: (g.get_damage_to(x), g.effective_power, g.initiative))
-            return t if g.get_damage_to(t) != 0 else None
+            return max(allowable_targets, key=lambda x: (g.get_damage_to(x), g.effective_power, g.initiative))
 
     def get_targets(self):
         targets = dict()
@@ -118,7 +117,7 @@ class Group(object):
 
     @property
     def effective_power(self):
-        return self.num_units * self.attack_dmg
+        return self.num_units*self.attack_dmg
 
     def get_damage_to(self, other):
         if self.side == other.side:
@@ -128,27 +127,12 @@ class Group(object):
             factor = 0
         if self.attack_type in other.weaknesses:
             factor = 2
-        return self.effective_power * factor
+        return self.effective_power*factor
 
 
-def get_test_input() -> str:
-    return textwrap.dedent("""\
-    Immune System:
-    17 units each with 5390 hit points (weak to radiation, bludgeoning) with an attack that does 4507 fire damage at initiative 2
-    989 units each with 1274 hit points (immune to fire; weak to bludgeoning, slashing) with an attack that does 25 slashing damage at initiative 3
-    
-    Infection:
-    801 units each with 4706 hit points (weak to radiation) with an attack that does 116 bludgeoning damage at initiative 1
-    4485 units each with 2961 hit points (immune to radiation; weak to fire, cold) with an attack that does 12 slashing damage at initiative 4""")
-
-
-def read_input(day_number, test=False):
-    if test:
-        return parse_input(get_test_input())
-    else:
-        filename = 'input/day{}.txt'.format(day_number)
-        with open(filename, 'r') as file:
-            return parse_input(file.read())
+def get_input(day: int):
+    with open('input/day{}.txt'.format(day), 'r') as file:
+        return file.read()
 
 
 def parse_input(s: str):
@@ -179,59 +163,31 @@ def parse_input(s: str):
     return Battle(groups=groups)
 
 
-def part_1(battle):
+def part_1(input_str: str):
+    # input_str = test_input()
+    battle = parse_input(input_str)
     battle.run()
-    for g in battle.groups:
-        print(g.num_units)
-    print(f'Part 1: {sum(g.num_units for g in battle.groups)}')
+    return sum(g.num_units for g in battle.groups)
 
 
-def part_2(test):
-    pwr = 0
-    while True:
-        boost = 10**pwr
-        battle = read_input(day_number=24, test=test)
+def get_winner(input_str, boost: int):
+    battle = parse_input(input_str)
+    battle.immune_boost(boost)
+    return battle.run()
+
+
+def part_2(input_str: str):
+    # input_str = test_input()
+
+    for boost in range(40850, 47000):
+        if boost % 10 == 0:
+            print(boost)
+        battle = parse_input(input_str)
         battle.immune_boost(boost)
         winner = battle.run()
         if winner == BattleSide.IMMUNE:
-            break
-        pwr += 1
-
-    min_boost = 10**(pwr-1)
-    max_boost = 10**pwr
-
-    boost = None
-    winner = None
-    battle = None
-    while min_boost < max_boost - 1:
-        boost = (min_boost + max_boost) // 2
-        battle = read_input(day_number=24, test=test)
-        battle.immune_boost(boost)
-        winner = battle.run()
-        print(min_boost, max_boost, boost, winner)
-        if winner == BattleSide.IMMUNE:
-            max_boost = boost
-        else:
-            min_boost = boost
-
-    while winner != BattleSide.IMMUNE:
-        boost = boost + 1
-        battle = read_input(day_number=24, test=test)
-        battle.immune_boost(boost)
-        winner = battle.run()
-
-    print(f'---Battle 1 (Boost {boost})--------------')
-    for g in battle.groups:
-        print(str(g))
-
-    battle2 = read_input(day_number=24, test=test)
-    battle2.immune_boost(boost - 1)
-    battle2.run()
-    print(f'---Battle 2 (Boost {boost-1})--------------')
-    for g in battle2.groups:
-        print(str(g))
-
-    print(f'Part 2: {sum(g.num_units for g in battle.groups)}')
+            print(boost)
+            return sum(g.num_units for g in battle.groups)
 
     # min_boost = 0
     # max_boost = 100000
@@ -252,10 +208,21 @@ def part_2(test):
     # return sum(g.num_units for g in battle.groups)
 
 
-def main():
-    # part_1(read_input(day_number=24, test=True))
+def test_input():
+    return textwrap.dedent("""\
+    Immune System:
+    17 units each with 5390 hit points (weak to radiation, bludgeoning) with an attack that does 4507 fire damage at initiative 2
+    989 units each with 1274 hit points (immune to fire; weak to bludgeoning, slashing) with an attack that does 25 slashing damage at initiative 3
+    
+    Infection:
+    801 units each with 4706 hit points (weak to radiation) with an attack that does 116 bludgeoning damage at initiative 1
+    4485 units each with 2961 hit points (immune to radiation; weak to fire, cold) with an attack that does 12 slashing damage at initiative 4""")
 
-    part_2(test=False)
+
+def main():
+    input_str = get_input(24)
+    print('Part 1:', part_1(input_str))
+    print('Part 2:', part_2(input_str))
 
 
 if __name__ == "__main__":
