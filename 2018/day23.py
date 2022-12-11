@@ -1,8 +1,7 @@
-from getinput import get_input
 import itertools
 import textwrap
-import re
-from grid import Loc2
+import math
+import numpy as np
 
 
 class Octahedron(object):
@@ -54,29 +53,33 @@ class Octahedron(object):
         return 'T{}'.format(self.idx)
 
 
+def get_input(day):
+    with open('input/day{}.txt'.format(day), 'r') as file:
+        return file.read()
+
+
 def parse_input(s: str):
     particles = []
     for line in s.splitlines(keepends=False):
-        pos = tuple(int(x) for x in (re.findall(r'pos=<(-?\d*),(-?\d*),(-?\d*)>', line))[0])
-        r = int(re.findall(r'r=(\d*)', line)[0])
-        particles.append((pos, r))
+        pos = [int(x) for x in line.split(',')]
+        particles.append((tuple(pos[:3]), pos[3]))
     return particles
 
 
-def part_1(input_str: str):
-    # input_str = test_input(1)
-    nanobots = parse_input(input_str)
+def dist_taxi(p1, p2):
+    return sum(abs(p1[x] - p2[x]) for x in range(len(p1)))
+
+
+def part_1(nanobots: str):
     center, dist = max(nanobots, key=lambda p: p[1])
     num_in_range = 0
-    for loc, r in nanobots:
-        if sum(abs(loc[x] - center[x]) for x in range(3)) <= dist:
+    for loc, _ in nanobots:
+        if dist_taxi(loc, center) <= dist:
             num_in_range += 1
     return num_in_range
 
 
-def part_2(input_str: str):
-    # input_str = test_input(2)
-    nanobots = parse_input(input_str)
+def part_2(nanobots):
     initial_octs = []
     for loc, r in nanobots:
         initial_octs.append(Octahedron.from_center_and_r(loc, r))
@@ -89,11 +92,11 @@ def part_2(input_str: str):
     while True:
         new_intersections = dict()
         for oct_set, intersection in intersections.items():
-            for oct in initial_octs:
-                if oct not in oct_set:
-                    new_intersection = Octahedron.intersection(intersection, oct)
+            for ogon in initial_octs:
+                if ogon not in oct_set:
+                    new_intersection = Octahedron.intersection(intersection, ogon)
                     if new_intersection is not None:
-                        new_intersections[frozenset(oct_set.union({oct}))] = new_intersection
+                        new_intersections[frozenset(oct_set.union({ogon}))] = new_intersection
         if not new_intersections:
             break
         intersections = new_intersections
@@ -104,6 +107,54 @@ def part_2(input_str: str):
     print(intersections)
     for t in intersections.values():
         print(t)
+
+
+# def get_valid_cuboids(nanobots, cuboids):
+#     """cuboids are given as ((xmin, ymin, zmin), (xwidth, ywidth, zwidth))"""
+#     cuboid_mins = dict()
+#     cuboid_maxs = dict()
+#     for loc, w in cuboids:
+#         mins, maxs = 0, 0
+#         center = loc + w/2
+#         sum_of_w = sum(w)/2
+#         for nb_pos, nb_rad in nanobots:
+#             dist = dist_taxi(nb_pos, center)
+#             if dist <= nb_rad - sum_of_w:    # This beacon must intersect this cuboid
+#                 mins += 1
+#                 maxs += 1
+#             elif dist <= nb_rad + sum_of_w:  # This beacon might intersect this cuboid
+#                 maxs += 1
+#         cuboid_mins[tuple(loc)] = mins
+#         cuboid_maxs[tuple(loc)] = maxs
+#
+#     max_of_mins = max(cuboid_mins.values())
+#     for cuboid in cuboids:
+#         if cuboid_maxs[tuple(cuboid[0])] >= max_of_mins:
+#             yield cuboid
+#
+#
+# def subdivide_cuboids(cuboids, divisions):
+#     for loc, w in cuboids:
+#         nw, r = divmod(w, divisions)
+#         for i, j, k in itertools.product(range(divisions), range(divisions), range(divisions)):
+#             yield loc + np.array([i, j, k])*nw, \
+#                   nw + r * np.array([i == divisions-1, j == divisions-1, k == divisions-1])
+#
+#
+# def part_2(nanobots):
+#     init_size = 10000000
+#     mins = -init_size
+#     cuboids = [(np.array([mins, mins, mins]), np.array([2*init_size, 2*init_size, 2*init_size]))]
+#     divisions_per_step = 3
+#     num_steps = math.ceil(math.log(2*init_size, divisions_per_step))
+#     print(f'Num steps: {num_steps}')
+#     for i in range(num_steps):
+#         subdiv_cubs = list(subdivide_cuboids(cuboids, divisions_per_step))
+#         new_cuboids = get_valid_cuboids(nanobots=nanobots, cuboids=subdiv_cubs)
+#         cuboids = list(new_cuboids)
+#         print(i, len(cuboids))
+#
+#     print(cuboids)
 
 
 def test_input(test_num):
@@ -129,9 +180,13 @@ def test_input(test_num):
 
 
 def main():
-    input_str = get_input(23)
-    # print('Part 1:', part_1(input_str))
-    print('Part 2:', part_2(input_str))
+    nbs = parse_input(get_input('23_clean'))
+    # with open('input/day23_clean.txt', 'w') as file:
+    #     for loc, r in nbs:
+    #         file.write(f'{loc[0]},{loc[1]},{loc[2]},{r}\n')
+
+    # print('Part 1:', part_1(nbs))
+    part_2(nbs)
 
 
 if __name__ == "__main__":
