@@ -79,7 +79,7 @@ def part_1(nanobots: str):
     return num_in_range
 
 
-def part_2(nanobots):
+def part_2_old(nanobots):
     initial_octs = []
     for loc, r in nanobots:
         initial_octs.append(Octahedron.from_center_and_r(loc, r))
@@ -109,52 +109,54 @@ def part_2(nanobots):
         print(t)
 
 
-# def get_valid_cuboids(nanobots, cuboids):
-#     """cuboids are given as ((xmin, ymin, zmin), (xwidth, ywidth, zwidth))"""
-#     cuboid_mins = dict()
-#     cuboid_maxs = dict()
-#     for loc, w in cuboids:
-#         mins, maxs = 0, 0
-#         center = loc + w/2
-#         sum_of_w = sum(w)/2
-#         for nb_pos, nb_rad in nanobots:
-#             dist = dist_taxi(nb_pos, center)
-#             if dist <= nb_rad - sum_of_w:    # This beacon must intersect this cuboid
-#                 mins += 1
-#                 maxs += 1
-#             elif dist <= nb_rad + sum_of_w:  # This beacon might intersect this cuboid
-#                 maxs += 1
-#         cuboid_mins[tuple(loc)] = mins
-#         cuboid_maxs[tuple(loc)] = maxs
-#
-#     max_of_mins = max(cuboid_mins.values())
-#     for cuboid in cuboids:
-#         if cuboid_maxs[tuple(cuboid[0])] >= max_of_mins:
-#             yield cuboid
-#
-#
-# def subdivide_cuboids(cuboids, divisions):
-#     for loc, w in cuboids:
-#         nw, r = divmod(w, divisions)
-#         for i, j, k in itertools.product(range(divisions), range(divisions), range(divisions)):
-#             yield loc + np.array([i, j, k])*nw, \
-#                   nw + r * np.array([i == divisions-1, j == divisions-1, k == divisions-1])
-#
-#
-# def part_2(nanobots):
-#     init_size = 10000000
-#     mins = -init_size
-#     cuboids = [(np.array([mins, mins, mins]), np.array([2*init_size, 2*init_size, 2*init_size]))]
-#     divisions_per_step = 3
-#     num_steps = math.ceil(math.log(2*init_size, divisions_per_step))
-#     print(f'Num steps: {num_steps}')
-#     for i in range(num_steps):
-#         subdiv_cubs = list(subdivide_cuboids(cuboids, divisions_per_step))
-#         new_cuboids = get_valid_cuboids(nanobots=nanobots, cuboids=subdiv_cubs)
-#         cuboids = list(new_cuboids)
-#         print(i, len(cuboids))
-#
-#     print(cuboids)
+def get_valid_cuboids(nanobots, cuboids):
+    """cuboids are given as ((xmin, ymin, zmin), (xwidth, ywidth, zwidth))"""
+    cuboid_mins = dict()
+    cuboid_maxs = dict()
+    for loc, w in cuboids:
+        mins, maxs = 0, 0
+        center = loc + w/2
+        sum_of_w = sum(w)/2
+        for nb_pos, nb_rad in nanobots:
+            dist = dist_taxi(nb_pos, center)
+            if dist <= nb_rad - sum_of_w:    # This beacon must intersect this cuboid
+                mins += 1
+                maxs += 1
+            elif dist <= nb_rad + sum_of_w:  # This beacon might intersect this cuboid
+                maxs += 1
+        cuboid_mins[tuple(loc)] = mins
+        cuboid_maxs[tuple(loc)] = maxs
+
+    max_of_mins = max(cuboid_mins.values())
+    max_of_maxs = max(cuboid_maxs.values())
+    print(f'  Max of mins: {max_of_mins}; Max of maxs: {max_of_maxs}')
+    for cuboid in cuboids:
+        if cuboid_maxs[tuple(cuboid[0])] >= max_of_mins:
+            yield cuboid
+
+
+def subdivide_cuboids(cuboids, divisions):
+    for loc, w in cuboids:
+        nw, r = divmod(w, divisions)
+        for i, j, k in itertools.product(range(divisions), range(divisions), range(divisions)):
+            yield loc + np.array([i, j, k])*nw, \
+                  nw + r * np.array([i == divisions-1, j == divisions-1, k == divisions-1])
+
+
+def part_2(nanobots):
+    init_size = 10000000
+    mins = -init_size
+    cuboids = [(np.array([mins, mins, mins]), np.array([2*init_size, 2*init_size, 2*init_size]))]
+    divisions_per_step = 3
+    num_steps = math.ceil(math.log(2*init_size, divisions_per_step))
+    print(f'Num steps: {num_steps}')
+    for i in range(num_steps):
+        subdiv_cubs = list(subdivide_cuboids(cuboids, divisions_per_step))
+        new_cuboids = get_valid_cuboids(nanobots=nanobots, cuboids=subdiv_cubs)
+        cuboids = list(new_cuboids)
+        print(i, len(cuboids))
+
+    print(cuboids)
 
 
 def test_input(test_num):
