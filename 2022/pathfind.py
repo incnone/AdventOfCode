@@ -1,12 +1,12 @@
 import queue
 
 
-def dijkstra(start, end, get_neighbors):
+def dijkstra(start, at_end, get_neighbors):
     """
     Parameters
     ----------
     start: The starting position. Type T. Must be hashable.
-    end: The ending position. Type T. Must be hashable.
+    at_end: Function T --> bool. Returns true if we're at an end square.
     get_neighbors: Function T --> List(Tuple[T, float]). Gives the neighbors of the input along with the cost to move.
 
     Returns
@@ -18,12 +18,14 @@ def dijkstra(start, end, get_neighbors):
     distances = {start: 0}
     prevnodes = dict()
     numloops = 0
+    end = None
 
     while not pq.empty():
         numloops += 1
         dist, pos = pq.get_nowait()
 
-        if pos == end:
+        if at_end(pos):
+            end = pos
             break
 
         if distances[pos] < dist:
@@ -35,6 +37,9 @@ def dijkstra(start, end, get_neighbors):
                 distances[next_pos] = dist + cost
                 prevnodes[next_pos] = pos
                 pq.put_nowait((dist + cost, next_pos))
+
+    if end not in distances:
+        return None
 
     currpos = end
     soln_path = [(end, distances[end])]
